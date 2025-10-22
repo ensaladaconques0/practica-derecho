@@ -1,0 +1,563 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Tests - Práctica Constitución / Derecho</title>
+<style>
+  /* Estilo sencillo, limpio y responsive */
+  :root{font-family:Inter,system-ui,Segoe UI,Roboto,"Helvetica Neue",Arial;--bg:#f7f8fa;--card:#ffffff;--accent:#1f7aec}
+  body{margin:0;background:var(--bg);color:#111}
+  header{background:linear-gradient(90deg, #0b63d4 0%, #2058c9 100%);color:#fff;padding:18px 20px}
+  header h1{margin:0;font-size:20px}
+  main{max-width:980px;margin:22px auto;padding:18px}
+  .tabs{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+  .tab{background:#fff;border-radius:10px;padding:10px 14px;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,0.06)}
+  .tab.active{outline:3px solid rgba(31,122,236,0.12)}
+  .card{background:var(--card);border-radius:12px;padding:18px;box-shadow:0 6px 20px rgba(16,24,40,0.06);margin-bottom:18px}
+  .question{margin-bottom:12px}
+  .qtext{font-weight:600;margin-bottom:8px}
+  .options{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px}
+  label.option{display:block;padding:8px;border-radius:8px;border:1px solid #e6e9ef;cursor:pointer}
+  input[type="radio"]{margin-right:8px}
+  .controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  button{background:var(--accent);color:#fff;border:none;padding:10px 14px;border-radius:8px;cursor:pointer}
+  button.secondary{background:#e6eefc;color:#0b63d4}
+  .result{padding:12px;border-radius:8px;margin-top:12px;background:#f1f8ff;border:1px solid #e1efff}
+  .small{font-size:13px;color:#555}
+  footer{max-width:980px;margin:12px auto;padding:10px;text-align:center;color:#666;font-size:13px}
+  .correct{border-color:rgba(21,128,61,0.2);background:#f3fff5}
+  .incorrect{border-color:rgba(220,38,38,0.12);background:#fff5f5}
+  @media (max-width:540px){header h1{font-size:16px}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Práctica: 3 exámenes (Constitución / Derecho) — preguntas extraídas del PDF</h1>
+</header>
+<main>
+  <div class="tabs" id="tabs"></div>
+
+  <div id="examContainer"></div>
+
+  <div class="card">
+    <div class="controls">
+      <button id="calcular">Calcular nota del examen actual</button>
+      <button class="secondary" id="verRespuestas">Mostrar respuestas correctas</button>
+      <div style="flex:1"></div>
+      <div class="small">Regla: +1 punto respuesta correcta, −1 punto respuesta incorrecta. Nota final por examen 0–10.</div>
+    </div>
+    <div id="resultado"></div>
+  </div>
+
+  <div class="card small">
+    <strong>Origen de las preguntas:</strong> Todas las preguntas y respuestas han sido extraídas exclusivamente del PDF que proporcionaste (examen.pdf). :contentReference[oaicite:2]{index=2} :contentReference[oaicite:3]{index=3}
+  </div>
+</main>
+
+<footer>
+  Puedes alojar este archivo como página estática (GitHub Pages). Ver instrucciones abajo.
+</footer>
+
+<script>
+/* ===== Datos: 3 exámenes, 10 preguntas cada uno, 6 opciones cada pregunta.
+   Todas las preguntas están tomadas del PDF proporcionado.
+   Cada objeto: {q: 'texto', options: [...6 opciones...], correct: index (0..5)}
+*/
+const exams = [
+  // Examen 1
+  [
+    {
+      q: "¿En qué fecha se publicó la Constitución Española de 1978 en el BOE?",
+      options: [
+        "1 de enero de 1978",
+        "29 de diciembre de 1978",
+        "6 de diciembre de 1978",
+        "28 de febrero de 1978",
+        "29 de octubre de 1978",
+        "7 de noviembre de 1978"
+      ],
+      correct: 1
+    },
+    {
+      q: "Según el texto, ¿qué valores superiores propugna la Constitución?",
+      options: [
+        "Libertad, justicia, igualdad y pluralismo político",
+        "Libertad, seguridad, represalia y unidad",
+        "Economía de mercado, soberanía, tradición y orden",
+        "Igualdad, secretismo, autoridad y unidad",
+        "Sólo libertad y justicia",
+        "Igualdad y fuerza militar"
+      ],
+      correct: 0
+    },
+    {
+      q: "¿Cómo define el artículo 1.1 a España?",
+      options: [
+        "Estado confesional",
+        "Estado social y democrático de Derecho",
+        "República federal",
+        "Monarquía absoluta",
+        "Estado socialista",
+        "Estado corporativista"
+      ],
+      correct: 1
+    },
+    {
+      q: "¿Qué forma política del Estado establece el artículo 1.3?",
+      options: [
+        "República presidencial",
+        "Monarquía parlamentaria",
+        "República parlamentaria",
+        "Monarquía absoluta",
+        "República federal",
+        "Monarquía constitucional parlamentaria con poder absoluto"
+      ],
+      correct: 1
+    },
+    {
+      q: "¿Qué artículo regula los Presupuestos Generales del Estado según el PDF?",
+      options: [
+        "Artículo 1",
+        "Artículo 134",
+        "Artículo 56",
+        "Artículo 9",
+        "Artículo 148",
+        "Artículo 33"
+      ],
+      correct: 1
+    },
+    {
+      q: "¿Qué órgano fiscaliza las cuentas del Estado?",
+      options: [
+        "El Tribunal Constitucional",
+        "El Tribunal de Cuentas",
+        "El Banco de España",
+        "El Defensor del Pueblo",
+        "Las Cortes Generales",
+        "El Consejo de Estado"
+      ],
+      correct: 1
+    },
+    {
+      q: "Según el PDF, ¿quién es el Defensor del Pueblo (mencionado en el documento)?",
+      options: [
+        "Pablo Iglesias",
+        "Ángel Gabilondo",
+        "Carmen Calvo",
+        "Felipe VI",
+        "María González",
+        "José Manuel"
+      ],
+      correct: 1
+    },
+    {
+      q: "Los artículos 14-29 de la Constitución recogen:",
+      options: [
+        "Presupuestos Generales del Estado",
+        "Derechos fundamentales",
+        "Competencias autonómicas",
+        "Reglas de sucesión",
+        "Normas tributarias",
+        "Reglamento del Congreso"
+      ],
+      correct: 1
+    },
+    {
+      q: "El artículo 33 mencionado en el PDF se refiere a:",
+      options: [
+        "La libertad sindical",
+        "La propiedad privada",
+        "La monarquía",
+        "Los deberes del ciudadano",
+        "La nacionalidad",
+        "El Tribunal de Cuentas"
+      ],
+      correct: 1
+    },
+    {
+      q: "Según el PDF, ¿qué principio protege la independencia de los jueces?",
+      options: [
+        "Principio de publicidad",
+        "Principio de inamovilidad",
+        "Principio de representatividad",
+        "Principio de control político",
+        "Principio de urgencia",
+        "Principio de discrecionalidad"
+      ],
+      correct: 1
+    }
+  ],
+
+  // Examen 2
+  [
+    {
+      q: "Según el documento, la Constitución fue publicada en el BOE el:",
+      options: [
+        "24 de diciembre de 1978",
+        "29 de diciembre de 1978",
+        "1 de enero de 1979",
+        "6 de diciembre de 1978",
+        "23 de diciembre de 1978",
+        "31 de diciembre de 1978"
+      ],
+      correct: 1
+    },
+    {
+      q: "¿Qué tres elementos componen la calificación 'Estado social y democrático de Derecho' en el art.1.1?",
+      options: [
+        "Jurídico, democrático y social",
+        "Económico, militar y religioso",
+        "Cultural, judicial y territorial",
+        "Electoral, fiscal y moral",
+        "Político, administrativo y local",
+        "Constitucional, procesal y penal"
+      ],
+      correct: 0
+    },
+    {
+      q: "¿Qué figura permite reclamar protección ante el Tribunal Constitucional si se vulneran derechos fundamentales?",
+      options: [
+        "Recurso de amparo",
+        "Recurso de alzada",
+        "Recurso de casación",
+        "Recurso disciplinario",
+        "Recurso de oficio",
+        "Recurso subsidiario"
+      ],
+      correct: 0
+    },
+    {
+      q: "¿Qué significa que la Constitución sea 'rígida' según el PDF?",
+      options: [
+        "Que no admite interpretación",
+        "Que es difícil de reformar",
+        "Que no tiene artículos",
+        "Que sólo se aplica en ciertos territorios",
+        "Que no protege derechos",
+        "Que se rehace cada año"
+      ],
+      correct: 1
+    },
+    {
+      q: "Según el texto, ¿qué principio permite a las comunidades autónomas legislar en sus competencias?",
+      options: [
+        "Principio de igualdad formal",
+        "Principio de autonomía",
+        "Principio de centralización",
+        "Principio de inamovilidad",
+        "Principio de retroactividad",
+        "Principio de intervención"
+      ],
+      correct: 1
+    },
+    {
+      q: "¿Cuál de estas materias es competencia exclusiva del Estado según el PDF?",
+      options: [
+        "Urbanismo regional",
+        "Inmigración y nacionalidad",
+        "Organización de ayuntamientos",
+        "Educación universitaria",
+        "Gestión de cultura local",
+        "Turismo regional"
+      ],
+      correct: 1
+    },
+    {
+      q: "¿Qué órganos forman las Cortes Generales?",
+      options: [
+        "El Congreso y el Tribunal Constitucional",
+        "El Congreso y el Senado",
+        "El Senado y el Gobierno",
+        "El Congreso y el Consejo de Estado",
+        "El Gobierno y la Corona",
+        "El Tribunal Supremo y el Senado"
+      ],
+      correct: 1
+    },
+    {
+      q: "En caso de veto del Senado, ¿qué necesita el Congreso para aprobar la ley definitivamente?",
+      options: [
+        "Mayoría simple",
+        "Unanimidad",
+        "Mayoría absoluta",
+        "Tres quintos",
+        "Dos tercios",
+        "Mayoría de dos tercios"
+      ],
+      correct: 2
+    },
+    {
+      q: "¿Qué tipo de mayoría requiere, por ejemplo, una reforma constitucional según el PDF?",
+      options: [
+        "Mayoría simple",
+        "Mayoría absoluta",
+        "Mayoría cualificada",
+        "Mayoría de abstenciones",
+        "Mayoría informal",
+        "Mayoría del Rey"
+      ],
+      correct: 2
+    },
+    {
+      q: "¿Qué nombre recibe el órgano de gobierno de los jueces mencionado en el documento?",
+      options: [
+        "Tribunal Supremo",
+        "Consejo General del Poder Judicial (CGPJ)",
+        "Tribunal Constitucional",
+        "Consejo de Estado",
+        "Ministerio de Justicia",
+        "Audiencia Nacional"
+      ],
+      correct: 1
+    }
+  ],
+
+  // Examen 3
+  [
+    {
+      q: "¿Qué son las fuentes del Derecho según el PDF (art.1.1 del Código Civil)?",
+      options: [
+        "La costumbre, la moral y la política",
+        "La ley, la costumbre y los principios generales del Derecho",
+        "El Congreso, el Senado y el Gobierno",
+        "La tradición, la costumbre y el rey",
+        "La jurisprudencia, la doctrina y el mercado",
+        "Las autonomías, las provincias y los municipios"
+      ],
+      correct: 1
+    },
+    {
+      q: "¿Qué artículo del Código Civil regula la interpretación aplicando el sentido propio de las palabras?",
+      options: [
+        "Artículo 1",
+        "Artículo 3",
+        "Artículo 148",
+        "Artículo 1967",
+        "Artículo 29",
+        "Artículo 4"
+      ],
+      correct: 1
+    },
+    {
+      q: "¿Qué figura de protección se aplica a menores no emancipados o discapacitados graves?",
+      options: [
+        "Curatela",
+        "Tutela",
+        "Defensor judicial",
+        "Emancipación",
+        "Testamento",
+        "Curaduría"
+      ],
+      correct: 1
+    },
+    {
+      q: "¿Qué indica el principio de jerarquía normativa en un conflicto de normas?",
+      options: [
+        "Se aplica la norma más reciente",
+        "Se aplica la norma de menor rango",
+        "Se aplica la norma de mayor rango",
+        "Se aplica la norma que beneficie al gobierno",
+        "Se aplica la norma que aparezca en el BOE primero",
+        "Se aplica la norma más antigua"
+      ],
+      correct: 2
+    },
+    {
+      q: "¿Qué se entiende por 'descentralización' en la Administración Pública (según el PDF)?",
+      options: [
+        "Asignar tareas a órganos inferiores del mismo ente",
+        "Trasladar competencias a entes con personalidad jurídica propia",
+        "Concentrar competencias en el gobierno central",
+        "Eliminar las competencias autonómicas",
+        "Privatizar servicios públicos",
+        "Fusionar municipios"
+      ],
+      correct: 1
+    },
+    {
+      q: "¿Qué diferencia principal hay entre descentralización y desconcentración?",
+      options: [
+        "La desconcentración crea nuevos estados",
+        "La descentralización cambia el ente y la personalidad jurídica; la desconcentración no",
+        "No hay diferencia alguna",
+        "La desconcentración siempre es internacional",
+        "La descentralización reduce competencias",
+        "La desconcentración implica elecciones"
+      ],
+      correct: 1
+    },
+    {
+      q: "Según el PDF, ¿qué se hace si la Ley de Presupuestos no se aprueba al inicio del ejercicio?",
+      options: [
+        "El Gobierno deja de pagar salarios",
+        "Los Presupuestos del ejercicio anterior se prorrogan automáticamente",
+        "Se convoca referéndum",
+        "Se aplica la ley europea",
+        "Se disuelven las Cortes",
+        "No se puede gastar dinero"
+      ],
+      correct: 1
+    },
+    {
+      q: "¿Qué entidad, según el PDF, asesora jurídicamente al Gobierno?",
+      options: [
+        "Tribunal de Cuentas",
+        "Consejo de Estado",
+        "Tribunal Supremo",
+        "Defensor del Pueblo",
+        "Banco de España",
+        "Consejo Económico y Social"
+      ],
+      correct: 1
+    },
+    {
+      q: "¿Qué protege la inviolabilidad de la Corona según el texto?",
+      options: [
+        "La responsabilidad penal del rey",
+        "Que el rey no sea perseguido penalmente por sus actos como jefe del Estado",
+        "Que el rey gobierne activamente",
+        "La intervención directa en el Parlamento",
+        "La elección del rey por votación",
+        "La independencia judicial"
+      ],
+      correct: 1
+    },
+    {
+      q: "Según el PDF, ¿qué recursos se usan cuando hay lagunas jurídicas?",
+      options: [
+        "Aplicar la costumbre, la analogía y principios generales del Derecho",
+        "Esperar a que el Parlamento decida",
+        "Ignorar el caso",
+        "Aplicar siempre la ley penal",
+        "Delegar a la administración local",
+        "Aplicar la decisión del rey"
+      ],
+      correct: 0
+    }
+  ]
+];
+
+/* ===== Rendering UI ===== */
+const tabsEl = document.getElementById('tabs');
+const examContainer = document.getElementById('examContainer');
+const resultadoEl = document.getElementById('resultado');
+
+let currentExam = 0;
+function createTabs() {
+  exams.forEach((_, i) => {
+    const t = document.createElement('div');
+    t.className = 'tab' + (i===0? ' active':'');
+    t.textContent = `Examen ${i+1}`;
+    t.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+      t.classList.add('active');
+      currentExam = i;
+      renderExam(i);
+      resultadoEl.innerHTML = '';
+    });
+    tabsEl.appendChild(t);
+  });
+}
+
+function renderExam(i) {
+  examContainer.innerHTML = '';
+  const ex = exams[i];
+  ex.forEach((item, qi) => {
+    const card = document.createElement('div');
+    card.className = 'card question';
+    const qn = document.createElement('div');
+    qn.className = 'qtext';
+    qn.textContent = `${qi+1}. ${item.q}`;
+    card.appendChild(qn);
+
+    const opts = document.createElement('div');
+    opts.className = 'options';
+    item.options.forEach((opt, oi) => {
+      const lab = document.createElement('label');
+      lab.className = 'option';
+      const input = document.createElement('input');
+      input.type = 'radio';
+      input.name = `e${i}_q${qi}`;
+      input.value = oi;
+      lab.appendChild(input);
+      const span = document.createElement('span');
+      span.textContent = opt;
+      lab.appendChild(span);
+      opts.appendChild(lab);
+    });
+    card.appendChild(opts);
+    examContainer.appendChild(card);
+  });
+  // scroll to top of exam
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+/* ===== Scoring logic =====
+   For each exam:
+   - For each question: if selected === correct -> +1
+                      if selected !== undefined && selected != correct -> -1
+                      if unanswered -> 0
+   Raw score range per exam: -10 .. +10
+   Nota (0..10) = (raw + 10) / 2
+*/
+function calculateCurrentScore() {
+  const ex = exams[currentExam];
+  let raw = 0;
+  ex.forEach((item, qi) => {
+    const radios = document.getElementsByName(`e${currentExam}_q${qi}`);
+    let picked;
+    for (const r of radios) if (r.checked) { picked = Number(r.value); break; }
+    if (picked === undefined) {
+      // unanswered -> 0
+    } else if (picked === item.correct) {
+      raw += 1;
+    } else {
+      raw -= 1;
+    }
+  });
+  const nota = (raw + 10) / 2;
+  return { raw, nota: Math.round(nota*100)/100 };
+}
+
+document.getElementById('calcular').addEventListener('click', () => {
+  const {raw, nota} = calculateCurrentScore();
+  const percent = Math.round((nota/10)*100);
+  resultadoEl.innerHTML = `
+    <div class="result">
+      <div><strong>Resultado examen ${currentExam+1}:</strong></div>
+      <div> Puntuación bruta: <strong>${raw}</strong> (rango -10 a +10)</div>
+      <div> Nota 0–10: <strong>${nota}</strong> — ${percent}%</div>
+      ${nota >= 5 ? '<div style="color:green;margin-top:6px">Aprobado (>=5)</div>' : '<div style="color:#b33;margin-top:6px">Suspenso (&lt;5)</div>'}
+    </div>
+  `;
+});
+
+/* Mostrar respuestas correctas y marcar opciones */
+let answersShown = false;
+document.getElementById('verRespuestas').addEventListener('click', () => {
+  answersShown = !answersShown;
+  const ex = exams[currentExam];
+  ex.forEach((item, qi) => {
+    const labels = Array.from(document.querySelectorAll(`label[for]`)); // not used - fallback
+    const radios = document.getElementsByName(`e${currentExam}_q${qi}`);
+    radios.forEach((r, oi) => {
+      const lab = r.parentElement;
+      lab.classList.remove('correct','incorrect');
+      if (answersShown) {
+        if (oi === item.correct) lab.classList.add('correct');
+        else if (r.checked && oi !== item.correct) lab.classList.add('incorrect');
+      } else {
+        lab.classList.remove('correct','incorrect');
+      }
+    });
+  });
+  document.getElementById('verRespuestas').textContent = answersShown ? 'Ocultar respuestas' : 'Mostrar respuestas correctas';
+});
+
+/* Inicialización */
+createTabs();
+renderExam(0);
+</script>
+</body>
+</html>
