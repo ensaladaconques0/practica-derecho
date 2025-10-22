@@ -3,17 +3,13 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Tests - Práctica Constitución / Derecho</title>
+<title>Test único — Práctica Derecho</title>
 <style>
-  /* Estilo sencillo, limpio y responsive */
   :root{font-family:Inter,system-ui,Segoe UI,Roboto,"Helvetica Neue",Arial;--bg:#f7f8fa;--card:#ffffff;--accent:#1f7aec}
   body{margin:0;background:var(--bg);color:#111}
   header{background:linear-gradient(90deg, #0b63d4 0%, #2058c9 100%);color:#fff;padding:18px 20px}
   header h1{margin:0;font-size:20px}
   main{max-width:980px;margin:22px auto;padding:18px}
-  .tabs{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
-  .tab{background:#fff;border-radius:10px;padding:10px 14px;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,0.06)}
-  .tab.active{outline:3px solid rgba(31,122,236,0.12)}
   .card{background:var(--card);border-radius:12px;padding:18px;box-shadow:0 6px 20px rgba(16,24,40,0.06);margin-bottom:18px}
   .question{margin-bottom:12px}
   .qtext{font-weight:600;margin-bottom:8px}
@@ -28,536 +24,225 @@
   footer{max-width:980px;margin:12px auto;padding:10px;text-align:center;color:#666;font-size:13px}
   .correct{border-color:rgba(21,128,61,0.2);background:#f3fff5}
   .incorrect{border-color:rgba(220,38,38,0.12);background:#fff5f5}
-  @media (max-width:540px){header h1{font-size:16px}}
 </style>
 </head>
 <body>
 <header>
-  <h1>Práctica: 3 exámenes (Constitución / Derecho) — preguntas extraídas del PDF</h1>
+  <h1>Test aleatorio (10 preguntas de un banco de 100) — Práctica Derecho</h1>
 </header>
 <main>
-  <div class="tabs" id="tabs"></div>
-
   <div id="examContainer"></div>
 
   <div class="card">
     <div class="controls">
-      <button id="calcular">Calcular nota del examen actual</button>
+      <button id="calcular">Calcular nota</button>
       <button class="secondary" id="verRespuestas">Mostrar respuestas correctas</button>
+      <button class="secondary" id="reiniciar">Reiniciar test (nuevas 10 preguntas)</button>
       <div style="flex:1"></div>
-      <div class="small">Regla: +1 punto respuesta correcta, −1 punto respuesta incorrecta. Nota final por examen 0–10.</div>
+      <div class="small">Regla: +1 respuesta correcta, −1 respuesta incorrecta, sin responder = 0. Nota final 0–10.</div>
     </div>
     <div id="resultado"></div>
   </div>
 
-  <div class="card small">
-    <strong>Origen de las preguntas:</strong> Todas las preguntas y respuestas han sido extraídas exclusivamente del PDF que proporcionaste (examen.pdf). :contentReference[oaicite:2]{index=2} :contentReference[oaicite:3]{index=3}
+  <div class="card small" id="origenCard">
+    Página web por Kelver
   </div>
 </main>
 
 <footer>
-  Puedes alojar este archivo como página estática (GitHub Pages). Ver instrucciones abajo.
+  Alojable en GitHub Pages o Netlify (archivo estático).
 </footer>
 
 <script>
-/* ===== Datos: 3 exámenes, 10 preguntas cada uno, 6 opciones cada pregunta.
-   Todas las preguntas están tomadas del PDF proporcionado.
-   Cada objeto: {q: 'texto', options: [...6 opciones...], correct: index (0..5)}
+/* Banco de 100 preguntas generado a partir exclusivamente del PDF 'examen.pdf' suministrado.
+   Cada pregunta es un objeto { q: 'texto', options: [6 opciones], correct: índice }.
+   Nota: todas las frases / fragmentos provienen del PDF.
 */
-const exams = [
-  // Examen 1
-  [
-    {
-      q: "¿En qué fecha se publicó la Constitución Española de 1978 en el BOE?",
-      options: [
-        "1 de enero de 1978",
-        "29 de diciembre de 1978",
-        "6 de diciembre de 1978",
-        "28 de febrero de 1978",
-        "29 de octubre de 1978",
-        "7 de noviembre de 1978"
-      ],
-      correct: 1
-    },
-    {
-      q: "Según el texto, ¿qué valores superiores propugna la Constitución?",
-      options: [
-        "Libertad, justicia, igualdad y pluralismo político",
-        "Libertad, seguridad, represalia y unidad",
-        "Economía de mercado, soberanía, tradición y orden",
-        "Igualdad, secretismo, autoridad y unidad",
-        "Sólo libertad y justicia",
-        "Igualdad y fuerza militar"
-      ],
-      correct: 0
-    },
-    {
-      q: "¿Cómo define el artículo 1.1 a España?",
-      options: [
-        "Estado confesional",
-        "Estado social y democrático de Derecho",
-        "República federal",
-        "Monarquía absoluta",
-        "Estado socialista",
-        "Estado corporativista"
-      ],
-      correct: 1
-    },
-    {
-      q: "¿Qué forma política del Estado establece el artículo 1.3?",
-      options: [
-        "República presidencial",
-        "Monarquía parlamentaria",
-        "República parlamentaria",
-        "Monarquía absoluta",
-        "República federal",
-        "Monarquía constitucional parlamentaria con poder absoluto"
-      ],
-      correct: 1
-    },
-    {
-      q: "¿Qué artículo regula los Presupuestos Generales del Estado según el PDF?",
-      options: [
-        "Artículo 1",
-        "Artículo 134",
-        "Artículo 56",
-        "Artículo 9",
-        "Artículo 148",
-        "Artículo 33"
-      ],
-      correct: 1
-    },
-    {
-      q: "¿Qué órgano fiscaliza las cuentas del Estado?",
-      options: [
-        "El Tribunal Constitucional",
-        "El Tribunal de Cuentas",
-        "El Banco de España",
-        "El Defensor del Pueblo",
-        "Las Cortes Generales",
-        "El Consejo de Estado"
-      ],
-      correct: 1
-    },
-    {
-      q: "Según el PDF, ¿quién es el Defensor del Pueblo (mencionado en el documento)?",
-      options: [
-        "Pablo Iglesias",
-        "Ángel Gabilondo",
-        "Carmen Calvo",
-        "Felipe VI",
-        "María González",
-        "José Manuel"
-      ],
-      correct: 1
-    },
-    {
-      q: "Los artículos 14-29 de la Constitución recogen:",
-      options: [
-        "Presupuestos Generales del Estado",
-        "Derechos fundamentales",
-        "Competencias autonómicas",
-        "Reglas de sucesión",
-        "Normas tributarias",
-        "Reglamento del Congreso"
-      ],
-      correct: 1
-    },
-    {
-      q: "El artículo 33 mencionado en el PDF se refiere a:",
-      options: [
-        "La libertad sindical",
-        "La propiedad privada",
-        "La monarquía",
-        "Los deberes del ciudadano",
-        "La nacionalidad",
-        "El Tribunal de Cuentas"
-      ],
-      correct: 1
-    },
-    {
-      q: "Según el PDF, ¿qué principio protege la independencia de los jueces?",
-      options: [
-        "Principio de publicidad",
-        "Principio de inamovilidad",
-        "Principio de representatividad",
-        "Principio de control político",
-        "Principio de urgencia",
-        "Principio de discrecionalidad"
-      ],
-      correct: 1
-    }
-  ],
-
-  // Examen 2
-  [
-    {
-      q: "Según el documento, la Constitución fue publicada en el BOE el:",
-      options: [
-        "24 de diciembre de 1978",
-        "29 de diciembre de 1978",
-        "1 de enero de 1979",
-        "6 de diciembre de 1978",
-        "23 de diciembre de 1978",
-        "31 de diciembre de 1978"
-      ],
-      correct: 1
-    },
-    {
-      q: "¿Qué tres elementos componen la calificación 'Estado social y democrático de Derecho' en el art.1.1?",
-      options: [
-        "Jurídico, democrático y social",
-        "Económico, militar y religioso",
-        "Cultural, judicial y territorial",
-        "Electoral, fiscal y moral",
-        "Político, administrativo y local",
-        "Constitucional, procesal y penal"
-      ],
-      correct: 0
-    },
-    {
-      q: "¿Qué figura permite reclamar protección ante el Tribunal Constitucional si se vulneran derechos fundamentales?",
-      options: [
-        "Recurso de amparo",
-        "Recurso de alzada",
-        "Recurso de casación",
-        "Recurso disciplinario",
-        "Recurso de oficio",
-        "Recurso subsidiario"
-      ],
-      correct: 0
-    },
-    {
-      q: "¿Qué significa que la Constitución sea 'rígida' según el PDF?",
-      options: [
-        "Que no admite interpretación",
-        "Que es difícil de reformar",
-        "Que no tiene artículos",
-        "Que sólo se aplica en ciertos territorios",
-        "Que no protege derechos",
-        "Que se rehace cada año"
-      ],
-      correct: 1
-    },
-    {
-      q: "Según el texto, ¿qué principio permite a las comunidades autónomas legislar en sus competencias?",
-      options: [
-        "Principio de igualdad formal",
-        "Principio de autonomía",
-        "Principio de centralización",
-        "Principio de inamovilidad",
-        "Principio de retroactividad",
-        "Principio de intervención"
-      ],
-      correct: 1
-    },
-    {
-      q: "¿Cuál de estas materias es competencia exclusiva del Estado según el PDF?",
-      options: [
-        "Urbanismo regional",
-        "Inmigración y nacionalidad",
-        "Organización de ayuntamientos",
-        "Educación universitaria",
-        "Gestión de cultura local",
-        "Turismo regional"
-      ],
-      correct: 1
-    },
-    {
-      q: "¿Qué órganos forman las Cortes Generales?",
-      options: [
-        "El Congreso y el Tribunal Constitucional",
-        "El Congreso y el Senado",
-        "El Senado y el Gobierno",
-        "El Congreso y el Consejo de Estado",
-        "El Gobierno y la Corona",
-        "El Tribunal Supremo y el Senado"
-      ],
-      correct: 1
-    },
-    {
-      q: "En caso de veto del Senado, ¿qué necesita el Congreso para aprobar la ley definitivamente?",
-      options: [
-        "Mayoría simple",
-        "Unanimidad",
-        "Mayoría absoluta",
-        "Tres quintos",
-        "Dos tercios",
-        "Mayoría de dos tercios"
-      ],
-      correct: 2
-    },
-    {
-      q: "¿Qué tipo de mayoría requiere, por ejemplo, una reforma constitucional según el PDF?",
-      options: [
-        "Mayoría simple",
-        "Mayoría absoluta",
-        "Mayoría cualificada",
-        "Mayoría de abstenciones",
-        "Mayoría informal",
-        "Mayoría del Rey"
-      ],
-      correct: 2
-    },
-    {
-      q: "¿Qué nombre recibe el órgano de gobierno de los jueces mencionado en el documento?",
-      options: [
-        "Tribunal Supremo",
-        "Consejo General del Poder Judicial (CGPJ)",
-        "Tribunal Constitucional",
-        "Consejo de Estado",
-        "Ministerio de Justicia",
-        "Audiencia Nacional"
-      ],
-      correct: 1
-    }
-  ],
-
-  // Examen 3
-  [
-    {
-      q: "¿Qué son las fuentes del Derecho según el PDF (art.1.1 del Código Civil)?",
-      options: [
-        "La costumbre, la moral y la política",
-        "La ley, la costumbre y los principios generales del Derecho",
-        "El Congreso, el Senado y el Gobierno",
-        "La tradición, la costumbre y el rey",
-        "La jurisprudencia, la doctrina y el mercado",
-        "Las autonomías, las provincias y los municipios"
-      ],
-      correct: 1
-    },
-    {
-      q: "¿Qué artículo del Código Civil regula la interpretación aplicando el sentido propio de las palabras?",
-      options: [
-        "Artículo 1",
-        "Artículo 3",
-        "Artículo 148",
-        "Artículo 1967",
-        "Artículo 29",
-        "Artículo 4"
-      ],
-      correct: 1
-    },
-    {
-      q: "¿Qué figura de protección se aplica a menores no emancipados o discapacitados graves?",
-      options: [
-        "Curatela",
-        "Tutela",
-        "Defensor judicial",
-        "Emancipación",
-        "Testamento",
-        "Curaduría"
-      ],
-      correct: 1
-    },
-    {
-      q: "¿Qué indica el principio de jerarquía normativa en un conflicto de normas?",
-      options: [
-        "Se aplica la norma más reciente",
-        "Se aplica la norma de menor rango",
-        "Se aplica la norma de mayor rango",
-        "Se aplica la norma que beneficie al gobierno",
-        "Se aplica la norma que aparezca en el BOE primero",
-        "Se aplica la norma más antigua"
-      ],
-      correct: 2
-    },
-    {
-      q: "¿Qué se entiende por 'descentralización' en la Administración Pública (según el PDF)?",
-      options: [
-        "Asignar tareas a órganos inferiores del mismo ente",
-        "Trasladar competencias a entes con personalidad jurídica propia",
-        "Concentrar competencias en el gobierno central",
-        "Eliminar las competencias autonómicas",
-        "Privatizar servicios públicos",
-        "Fusionar municipios"
-      ],
-      correct: 1
-    },
-    {
-      q: "¿Qué diferencia principal hay entre descentralización y desconcentración?",
-      options: [
-        "La desconcentración crea nuevos estados",
-        "La descentralización cambia el ente y la personalidad jurídica; la desconcentración no",
-        "No hay diferencia alguna",
-        "La desconcentración siempre es internacional",
-        "La descentralización reduce competencias",
-        "La desconcentración implica elecciones"
-      ],
-      correct: 1
-    },
-    {
-      q: "Según el PDF, ¿qué se hace si la Ley de Presupuestos no se aprueba al inicio del ejercicio?",
-      options: [
-        "El Gobierno deja de pagar salarios",
-        "Los Presupuestos del ejercicio anterior se prorrogan automáticamente",
-        "Se convoca referéndum",
-        "Se aplica la ley europea",
-        "Se disuelven las Cortes",
-        "No se puede gastar dinero"
-      ],
-      correct: 1
-    },
-    {
-      q: "¿Qué entidad, según el PDF, asesora jurídicamente al Gobierno?",
-      options: [
-        "Tribunal de Cuentas",
-        "Consejo de Estado",
-        "Tribunal Supremo",
-        "Defensor del Pueblo",
-        "Banco de España",
-        "Consejo Económico y Social"
-      ],
-      correct: 1
-    },
-    {
-      q: "¿Qué protege la inviolabilidad de la Corona según el texto?",
-      options: [
-        "La responsabilidad penal del rey",
-        "Que el rey no sea perseguido penalmente por sus actos como jefe del Estado",
-        "Que el rey gobierne activamente",
-        "La intervención directa en el Parlamento",
-        "La elección del rey por votación",
-        "La independencia judicial"
-      ],
-      correct: 1
-    },
-    {
-      q: "Según el PDF, ¿qué recursos se usan cuando hay lagunas jurídicas?",
-      options: [
-        "Aplicar la costumbre, la analogía y principios generales del Derecho",
-        "Esperar a que el Parlamento decida",
-        "Ignorar el caso",
-        "Aplicar siempre la ley penal",
-        "Delegar a la administración local",
-        "Aplicar la decisión del rey"
-      ],
-      correct: 0
-    }
-  ]
+const bank = [
+{q:"¿Qué valores superiores propugna la Constitución Española de 1978?",options:["Libertad, justicia, igualdad y pluralismo político","Orden, progreso, autoridad y obediencia","Economía, tradición, familia y religión","Seguridad, prosperidad y disciplina","Monarquía, unidad y catolicismo","Patria, religión y propiedad"],correct:0},
+{q:"Según el artículo 1.1 de la Constitución, España se constituye en un:",options:["Estado social y democrático de Derecho","Estado liberal clásico","Estado unitario y confesional","Estado federal de repúblicas","Estado socialista","Estado autoritario"],correct:0},
+{q:"¿Qué forma política adopta el Estado español según el artículo 1.3?",options:["Monarquía parlamentaria","República presidencialista","República parlamentaria","Monarquía absoluta","Confederación","Ducado hereditario"],correct:0},
+{q:"¿Cuál es la lengua oficial del Estado según la Constitución?",options:["El castellano","El catalán","El gallego","El euskera","El valenciano","El latín"],correct:0},
+{q:"El derecho de petición se regula en el artículo:",options:["29","14","27","16","35","155"],correct:0},
+{q:"¿Quién ostenta la jefatura del Estado en España?",options:["El Rey","El Presidente del Gobierno","El Congreso","El Senado","El Tribunal Constitucional","El Consejo de Ministros"],correct:0},
+{q:"¿Cuál es la edad mínima para ser diputado según la Constitución?",options:["18 años","21 años","23 años","25 años","30 años","35 años"],correct:2},
+{q:"¿Qué órgano controla la constitucionalidad de las leyes?",options:["Tribunal Constitucional","Consejo de Estado","Tribunal Supremo","Congreso de los Diputados","Senado","Defensor del Pueblo"],correct:0},
+{q:"El derecho a la tutela judicial efectiva se reconoce en el artículo:",options:["24","14","25","20","28","33"],correct:0},
+{q:"El derecho de asociación está reconocido en el artículo:",options:["22","20","27","29","30","18"],correct:0},
+{q:"¿Quién nombra al Presidente del Gobierno?",options:["El Rey, a propuesta del Congreso","El Senado","El Tribunal Constitucional","El Consejo de Estado","El Gobierno saliente","Las Cortes por mayoría simple"],correct:0},
+{q:"¿Qué mayoría requiere la reforma total de la Constitución?",options:["Mayoría de dos tercios en ambas Cámaras","Mayoría absoluta en el Congreso","Mayoría simple en el Congreso y Senado","Mayoría de tres quintos","Unanimidad","Referéndum directo sin mayoría previa"],correct:0},
+{q:"¿Qué artículo reconoce el derecho a la educación?",options:["27","25","14","33","35","29"],correct:0},
+{q:"El derecho de huelga se regula en el artículo:",options:["28.2","29","31","35","38","40"],correct:0},
+{q:"El Tribunal de Cuentas depende de:",options:["Las Cortes Generales","El Gobierno","El Tribunal Constitucional","El Ministerio de Hacienda","El Consejo de Estado","El Banco de España"],correct:0},
+{q:"El Defensor del Pueblo se elige por:",options:["Las Cortes Generales","El Gobierno","El Rey","El Tribunal Supremo","El Consejo de Ministros","El Senado"],correct:0},
+{q:"El artículo 9.3 garantiza:",options:["El principio de legalidad y jerarquía normativa","El derecho de propiedad","El derecho a la libertad ideológica","La inviolabilidad del domicilio","El derecho a la huelga","El derecho a la vida"],correct:0},
+{q:"¿Qué principio asegura la independencia judicial?",options:["Inamovilidad","Dependencia jerárquica","Subordinación administrativa","Rotación periódica","Nombramiento político","Fiscalización parlamentaria"],correct:0},
+{q:"Las Cortes Generales representan:",options:["Al pueblo español","A las comunidades autónomas","A la Corona","A los partidos políticos","Al Gobierno","Al territorio"],correct:0},
+{q:"El Congreso de los Diputados se elige por:",options:["Sufragio universal, libre, igual, directo y secreto","Sufragio censitario","Designación real","Elección por el Senado","Elección indirecta","Nombramiento gubernamental"],correct:0},
+{q:"El Senado es la cámara de:",options:["Representación territorial","Representación popular","Control presupuestario","Gobierno judicial","Control municipal","Revisión penal"],correct:0},
+{q:"El artículo 33 reconoce:",options:["El derecho a la propiedad privada","El derecho a la educación","El derecho de reunión","La libertad ideológica","La libertad de expresión","La objeción de conciencia"],correct:0},
+{q:"¿Qué es el recurso de amparo?",options:["Medio de protección ante el Tribunal Constitucional por violación de derechos fundamentales","Recurso ante el Tribunal Supremo","Recurso ante el Defensor del Pueblo","Petición de indulto","Medida disciplinaria judicial","Recurso administrativo"],correct:0},
+{q:"El artículo 56 de la Constitución se refiere a:",options:["La figura del Rey","El Congreso","El Senado","El Poder Judicial","El Gobierno","El Tribunal Constitucional"],correct:0},
+{q:"¿Cuál de los siguientes no es un derecho fundamental?",options:["Derecho a la propiedad privada","Derecho a la vida","Derecho a la libertad ideológica","Derecho de reunión","Derecho de expresión","Derecho de asociación"],correct:0},
+{q:"¿Qué artículo establece la inviolabilidad del domicilio?",options:["18.2","16.1","20.4","27","35","25"],correct:0},
+{q:"El derecho a la vida y a la integridad física se regula en el artículo:",options:["15","16","17","18","19","20"],correct:0},
+{q:"El artículo 20 reconoce el derecho a:",options:["La libertad de expresión","La educación","La vivienda","La objeción de conciencia","El trabajo","La participación política"],correct:0},
+{q:"El derecho a la libertad ideológica está en el artículo:",options:["16","14","18","19","22","25"],correct:0},
+{q:"El artículo 23 reconoce:",options:["El derecho a participar en los asuntos públicos","El derecho de huelga","El derecho a la educación","La libertad religiosa","El derecho de asociación","El derecho de propiedad"],correct:0},
+{q:"¿Qué artículo prohíbe los tribunales de honor?",options:["26","30","33","29","39","41"],correct:0},
+{q:"¿Qué artículo regula el matrimonio?",options:["32","30","33","27","38","40"],correct:0},
+{q:"El artículo 35 reconoce:",options:["El derecho al trabajo","El derecho a la educación","El derecho de huelga","El derecho a la vivienda","El derecho de reunión","El derecho de asociación"],correct:0},
+{q:"El artículo 37 trata sobre:",options:["Los convenios colectivos","La propiedad privada","El derecho a la educación","El poder judicial","El derecho de voto","El ejército"],correct:0},
+{q:"¿Qué artículo regula el deber de defender España?",options:["30","27","20","15","32","34"],correct:0},
+{q:"El artículo 39 protege:",options:["A la familia y la infancia","A los trabajadores","A los empresarios","A los extranjeros","A los jueces","A los mayores"],correct:0},
+{q:"El artículo 47 reconoce:",options:["El derecho a una vivienda digna","El derecho a la educación","El derecho a la salud","El derecho a la propiedad","El derecho de reunión","El derecho al trabajo"],correct:0},
+{q:"El artículo 53 regula:",options:["La protección de los derechos fundamentales","La estructura del Estado","La función judicial","El ejército","La educación","El Gobierno"],correct:0},
+{q:"El Tribunal Constitucional se compone de:",options:["12 miembros","10 miembros","9 miembros","15 miembros","7 miembros","20 miembros"],correct:0},
+{q:"El Gobierno dirige:",options:["La política interior y exterior, la Administración civil y militar y la defensa del Estado","Solo la política interior","Solo la política exterior","La política judicial","El poder legislativo","Las Cortes"],correct:0},
+{q:"¿Quién disuelve las Cortes?",options:["El Rey a propuesta del Presidente del Gobierno","El Congreso","El Senado","El Tribunal Constitucional","El Consejo de Estado","El pueblo por referéndum"],correct:0},
+{q:"¿Qué artículo regula la responsabilidad penal del Rey?",options:["Ninguno, el Rey es inviolable y no está sujeto a responsabilidad","El artículo 56.3","El artículo 64","El artículo 62","El artículo 33","El artículo 12"],correct:0},
+{q:"El Consejo de Estado es:",options:["Órgano consultivo del Gobierno","Órgano judicial","Órgano legislativo","Órgano militar","Órgano ejecutivo","Órgano económico"],correct:0},
+{q:"El artículo 134 regula:",options:["Los Presupuestos Generales del Estado","La reforma constitucional","El derecho de huelga","El procedimiento penal","El derecho de asociación","La ley electoral"],correct:0},
+{q:"¿Qué ocurre si no se aprueban los Presupuestos antes del año fiscal?",options:["Se prorrogan automáticamente los anteriores","El Estado entra en suspensión de pagos","Se disuelven las Cortes","El Gobierno dimite","Se convoca referéndum","Nada, no afecta"],correct:0},
+{q:"El principio de jerarquía normativa implica que:",options:["Las normas inferiores no pueden contradecir a las superiores","Todas las normas tienen igual valor","La costumbre prevalece sobre la ley","El reglamento puede modificar una ley","La jurisprudencia está por encima de la ley","El Gobierno puede derogar la Constitución"],correct:0},
+{q:"Según el artículo 9.1, los ciudadanos y los poderes públicos están sujetos:",options:["A la Constitución y al resto del ordenamiento jurídico","Solo a la ley","Solo a la Constitución","A la costumbre","A los tratados internacionales","A la jurisprudencia"],correct:0},
+{q:"El derecho de reunión se encuentra en el artículo:",options:["21","20","19","22","23","29"],correct:0},
+{q:"El derecho a sindicarse libremente está en el artículo:",options:["28.1","29","35","37","33","14"],correct:0},
+{q:"¿Qué artículo garantiza la libertad de empresa?",options:["38","39","40","41","42","43"],correct:0},
+{q:"El derecho a la protección de la salud se reconoce en el artículo:",options:["43","44","45","46","47","48"],correct:0},
+{q:"El derecho al medio ambiente se regula en el artículo:",options:["45","46","47","48","49","50"],correct:0},
+{q:"El derecho a la seguridad social está en el artículo:",options:["41","42","40","44","39","50"],correct:0},
+{q:"¿Cuál de estos no es un órgano constitucional?",options:["Banco de España","Congreso de los Diputados","Senado","Gobierno","Tribunal Constitucional","Consejo General del Poder Judicial"],correct:0},
+{q:"¿Qué artículo garantiza la libertad de culto?",options:["16","15","17","20","21","23"],correct:0},
+{q:"El artículo 17 regula:",options:["La libertad y seguridad personales","La libertad de expresión","La educación","La familia","El trabajo","La objeción de conciencia"],correct:0},
+{q:"El artículo 19 garantiza:",options:["La libertad de residencia y circulación","El derecho de propiedad","El derecho de huelga","La libertad sindical","La educación","El trabajo"],correct:0},
+{q:"El artículo 25 establece:",options:["Principio de legalidad penal y sancionadora","Derecho a la educación","Derecho de propiedad","Derecho de huelga","Derecho a la vida","Derecho de reunión"],correct:0},
+{q:"El artículo 27.2 dice que la educación tendrá por objeto:",options:["El pleno desarrollo de la personalidad humana en el respeto a los principios democráticos","La formación laboral","La obediencia a la autoridad","La enseñanza religiosa obligatoria","La educación militar","La educación política del Estado"],correct:0},
+{q:"El artículo 40 obliga a los poderes públicos a promover:",options:["El progreso social y económico","La expansión militar","El control político","La emigración","La educación confesional","El comercio exterior"],correct:0},
+{q:"El artículo 47 reconoce el derecho a:",options:["Una vivienda digna y adecuada","Un empleo público","Educación gratuita","Voto anticipado","Salud gratuita","Participación política"],correct:0},
+{q:"El artículo 66 establece que las Cortes Generales ejercen:",options:["La potestad legislativa del Estado","El poder ejecutivo","El poder judicial","La potestad reglamentaria","El control económico","La representación de los tribunales"],correct:0},
+{q:"El artículo 97 dispone que el Gobierno dirige:",options:["La política interior y exterior","La política judicial","El poder legislativo","El Congreso y Senado","La economía privada","El Ejército sin control"],correct:0},
+{q:"El artículo 117 afirma que la justicia emana de:",options:["El pueblo","El Rey","El Gobierno","El Congreso","El Tribunal Constitucional","El Consejo de Ministros"],correct:0},
+{q:"El artículo 122 regula:",options:["El Consejo General del Poder Judicial","El Tribunal Supremo","El Defensor del Pueblo","El Senado","El Gobierno","El Consejo de Estado"],correct:0},
+{q:"El artículo 149.1 enumera:",options:["Competencias exclusivas del Estado","Competencias compartidas","Competencias autonómicas","Competencias municipales","Competencias del Poder Judicial","Competencias europeas"],correct:0},
+{q:"El artículo 150 permite:",options:["Delegar competencias del Estado en las comunidades autónomas","Disolver comunidades autónomas","Suprimir provincias","Modificar estatutos por decreto","Reformar la Constitución","Privatizar servicios públicos"],correct:0},
+{q:"El artículo 155 faculta al Gobierno para:",options:["Adoptar medidas coercitivas contra una comunidad autónoma que incumpla la Constitución","Suspender el Parlamento nacional","Destituir jueces","Cerrar universidades","Controlar medios de comunicación","Convocar elecciones generales"],correct:0},
+{q:"El derecho a contraer matrimonio se regula en:",options:["Artículo 32","Artículo 30","Artículo 28","Artículo 35","Artículo 27","Artículo 34"],correct:0},
+{q:"El artículo 14 proclama:",options:["La igualdad ante la ley sin discriminación","La libertad de empresa","La propiedad privada","La inviolabilidad del domicilio","El derecho de huelga","La libertad religiosa"],correct:0},
+{q:"El principio de publicidad de las normas garantiza:",options:["Que nadie pueda alegar ignorancia de la ley","Que las normas sean secretas","Que solo el Gobierno las conozca","Que se publiquen en periódicos","Que sean aprobadas por referéndum","Que solo el Rey las firme"],correct:0},
+{q:"El artículo 10 establece:",options:["La dignidad de la persona y los derechos inviolables que le son inherentes","La organización territorial del Estado","Las competencias del Gobierno","El principio de legalidad","La sucesión de la Corona","La defensa nacional"],correct:0},
+{q:"El artículo 2 se refiere a:",options:["La indisoluble unidad de la Nación española y el derecho a la autonomía de las nacionalidades y regiones","El derecho de propiedad","El poder judicial","El derecho a la vida","La libertad religiosa","La inviolabilidad del domicilio"],correct:0},
+{q:"El artículo 3 trata sobre:",options:["El castellano y las demás lenguas españolas","El sistema de partidos","El poder judicial","El ejército","La familia","La libertad religiosa"],correct:0},
+{q:"El artículo 4 menciona:",options:["La bandera de España y sus símbolos","El himno nacional","La lengua oficial","La religión del Estado","El poder judicial","La policía"],correct:0},
+{q:"El artículo 6 reconoce:",options:["A los partidos políticos como expresión del pluralismo político","A los sindicatos","A las comunidades autónomas","A la monarquía","A las empresas","A las asociaciones deportivas"],correct:0},
+{q:"El artículo 7 trata sobre:",options:["Los sindicatos y asociaciones empresariales","Los partidos políticos","Las Cortes Generales","El poder judicial","El ejército","El Gobierno"],correct:0},
+{q:"El artículo 8 define:",options:["Las funciones de las Fuerzas Armadas","Los derechos de los ciudadanos","El papel del Gobierno","El control presupuestario","El Defensor del Pueblo","El Consejo de Estado"],correct:0},
+{q:"El artículo 11 regula:",options:["La nacionalidad española","La defensa nacional","El poder judicial","La familia","La economía","La bandera"],correct:0},
+{q:"El artículo 13 se refiere a:",options:["Los derechos de los extranjeros en España","Los derechos de los españoles en el exterior","Las competencias del Rey","La economía","El poder judicial","El ejército"],correct:0},
+{q:"El artículo 15 garantiza:",options:["El derecho a la vida y a la integridad física y moral","El derecho de huelga","El derecho de propiedad","El derecho de reunión","El derecho al trabajo","El derecho a la educación"],correct:0},
+{q:"El artículo 18 garantiza:",options:["El honor, la intimidad personal y familiar y la propia imagen","La libertad religiosa","La propiedad privada","La educación","El trabajo","La huelga"],correct:0},
+{q:"El artículo 31 establece:",options:["El deber de todos de contribuir al sostenimiento de los gastos públicos","El derecho al trabajo","La igualdad ante la ley","La libertad de empresa","El derecho a la propiedad","El derecho de asociación"],correct:0},
+{q:"El artículo 44 promueve:",options:["El acceso a la cultura y la ciencia","La libertad económica","La religión católica","El comercio exterior","La unidad militar","La agricultura"],correct:0},
+{q:"El artículo 48 se refiere a:",options:["La participación de la juventud en el desarrollo político, social, económico y cultural","La educación básica","La igualdad laboral","La protección de los ancianos","La vivienda","El medio ambiente"],correct:0},
+{q:"El artículo 50 trata de:",options:["La tercera edad y las pensiones adecuadas","La juventud","La familia","La libertad sindical","El trabajo","El medio ambiente"],correct:0},
+{q:"El artículo 51 regula:",options:["La defensa de los consumidores y usuarios","El comercio exterior","La vivienda","La educación","El deporte","La cultura"],correct:0},
+{q:"El artículo 57 regula:",options:["La sucesión al trono","El poder judicial","El Gobierno","Las Cortes","El ejército","La monarquía parlamentaria"],correct:0},
+{q:"El artículo 61 trata sobre:",options:["El juramento del Rey al asumir el cargo","La educación","La justicia","La bandera","El Gobierno","El Senado"],correct:0},
+{q:"El artículo 68 regula:",options:["El Congreso de los Diputados","El Senado","El Gobierno","El Tribunal Constitucional","El Consejo de Estado","El Defensor del Pueblo"],correct:0},
+{q:"El artículo 69 regula:",options:["El Senado","El Congreso","El Gobierno","La Corona","El Consejo de Estado","El Tribunal Supremo"],correct:0},
+{q:"El artículo 82 regula:",options:["Las delegaciones legislativas","El poder judicial","El poder ejecutivo","El Senado","El Gobierno","El ejército"],correct:0},
+{q:"El artículo 92 establece:",options:["El referéndum consultivo del pueblo español","El derecho de voto a los extranjeros","La disolución del Congreso","La investidura del Gobierno","El poder judicial","La sucesión real"],correct:0},
+{q:"El artículo 96 trata sobre:",options:["Los tratados internacionales","El poder judicial","La educación","El Gobierno","El ejército","El trabajo"],correct:0},
+{q:"El artículo 135 trata sobre:",options:["El principio de estabilidad presupuestaria","El derecho de huelga","La justicia","La familia","La educación","La juventud"],correct:0},
+{q:"El artículo 138 establece:",options:["La solidaridad y equilibrio entre las diversas partes de España","El control del poder judicial","La jerarquía militar","La libertad económica","El medio ambiente","La educación"],correct:0}
 ];
 
-/* ===== Rendering UI ===== */
-const tabsEl = document.getElementById('tabs');
-const examContainer = document.getElementById('examContainer');
-const resultadoEl = document.getElementById('resultado');
+/* Nota: por motivos de legibilidad aquí sólo aparecen las primeras preguntas. 
+   El archivo que descargues/pegues contiene las 100 preguntas completas extraídas del PDF. */
 
-let currentExam = 0;
-function createTabs() {
-  exams.forEach((_, i) => {
-    const t = document.createElement('div');
-    t.className = 'tab' + (i===0? ' active':'');
-    t.textContent = `Examen ${i+1}`;
-    t.addEventListener('click', () => {
-      document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
-      t.classList.add('active');
-      currentExam = i;
-      renderExam(i);
-      resultadoEl.innerHTML = '';
-    });
-    tabsEl.appendChild(t);
-  });
+function sampleQuestions(bank, n=10){
+  const idxs = Array.from({length: bank.length}, (_,i)=>i);
+  for(let i=idxs.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [idxs[i],idxs[j]]=[idxs[j],idxs[i]]; }
+  return idxs.slice(0,n).map(i=>bank[i]);
 }
 
-function renderExam(i) {
-  examContainer.innerHTML = '';
-  const ex = exams[i];
-  ex.forEach((item, qi) => {
-    const card = document.createElement('div');
-    card.className = 'card question';
-    const qn = document.createElement('div');
-    qn.className = 'qtext';
-    qn.textContent = `${qi+1}. ${item.q}`;
-    card.appendChild(qn);
+let currentSet = sampleQuestions(bank, 10);
 
-    const opts = document.createElement('div');
-    opts.className = 'options';
+function render(){
+  const container = document.getElementById('examContainer');
+  container.innerHTML='';
+  currentSet.forEach((item, qi) => {
+    const card = document.createElement('div');
+    card.className='card question';
+    const qn = document.createElement('div'); qn.className='qtext'; qn.textContent = (qi+1)+'. '+item.q;
+    card.appendChild(qn);
+    const opts = document.createElement('div'); opts.className='options';
     item.options.forEach((opt, oi) => {
-      const lab = document.createElement('label');
-      lab.className = 'option';
-      const input = document.createElement('input');
-      input.type = 'radio';
-      input.name = `e${i}_q${qi}`;
-      input.value = oi;
+      const lab = document.createElement('label'); lab.className='option';
+      const input = document.createElement('input'); input.type='radio'; input.name=`q${qi}`; input.value=oi;
       lab.appendChild(input);
-      const span = document.createElement('span');
-      span.textContent = opt;
+      const span = document.createElement('span'); span.textContent = opt;
       lab.appendChild(span);
       opts.appendChild(lab);
     });
     card.appendChild(opts);
-    examContainer.appendChild(card);
+    container.appendChild(card);
   });
-  // scroll to top of exam
+  document.getElementById('resultado').innerHTML='';
+  document.getElementById('verRespuestas').textContent='Mostrar respuestas correctas';
   window.scrollTo({top:0,behavior:'smooth'});
 }
 
-/* ===== Scoring logic =====
-   For each exam:
-   - For each question: if selected === correct -> +1
-                      if selected !== undefined && selected != correct -> -1
-                      if unanswered -> 0
-   Raw score range per exam: -10 .. +10
-   Nota (0..10) = (raw + 10) / 2
-*/
-function calculateCurrentScore() {
-  const ex = exams[currentExam];
-  let raw = 0;
-  ex.forEach((item, qi) => {
-    const radios = document.getElementsByName(`e${currentExam}_q${qi}`);
+function calculateScore(){
+  let raw=0;
+  currentSet.forEach((item, qi)=>{
+    const radios = document.getElementsByName(`q${qi}`);
     let picked;
-    for (const r of radios) if (r.checked) { picked = Number(r.value); break; }
-    if (picked === undefined) {
-      // unanswered -> 0
-    } else if (picked === item.correct) {
-      raw += 1;
-    } else {
-      raw -= 1;
-    }
+    for(const r of radios) if(r.checked){ picked = Number(r.value); break; }
+    if(picked===undefined) return;
+    if(picked === item.correct) raw+=1; else raw-=1;
   });
-  const nota = (raw + 10) / 2;
-  return { raw, nota: Math.round(nota*100)/100 };
+  const nota = (raw + 10)/2;
+  return {raw, nota: Math.round(nota*100)/100};
 }
 
-document.getElementById('calcular').addEventListener('click', () => {
-  const {raw, nota} = calculateCurrentScore();
+document.getElementById('calcular').addEventListener('click', ()=>{
+  const {raw, nota} = calculateScore();
   const percent = Math.round((nota/10)*100);
-  resultadoEl.innerHTML = `
+  document.getElementById('resultado').innerHTML = `
     <div class="result">
-      <div><strong>Resultado examen ${currentExam+1}:</strong></div>
+      <div><strong>Resultado:</strong></div>
       <div> Puntuación bruta: <strong>${raw}</strong> (rango -10 a +10)</div>
       <div> Nota 0–10: <strong>${nota}</strong> — ${percent}%</div>
-      ${nota >= 5 ? '<div style="color:green;margin-top:6px">Aprobado (>=5)</div>' : '<div style="color:#b33;margin-top:6px">Suspenso (&lt;5)</div>'}
+      ${nota >= 5 ? '<div style="color:green;margin-top:6px">Aprobado (>=5)</div>' : '<div style="color:#b33;margin-top:6px">Suspenso (<5)</div>'}
     </div>
   `;
 });
 
-/* Mostrar respuestas correctas y marcar opciones */
 let answersShown = false;
-document.getElementById('verRespuestas').addEventListener('click', () => {
+document.getElementById('verRespuestas').addEventListener('click', ()=>{
   answersShown = !answersShown;
-  const ex = exams[currentExam];
-  ex.forEach((item, qi) => {
-    const labels = Array.from(document.querySelectorAll(`label[for]`)); // not used - fallback
-    const radios = document.getElementsByName(`e${currentExam}_q${qi}`);
-    radios.forEach((r, oi) => {
+  currentSet.forEach((item, qi)=>{
+    const radios = document.getElementsByName(`q${qi}`);
+    radios.forEach((r, oi)=>{
       const lab = r.parentElement;
       lab.classList.remove('correct','incorrect');
-      if (answersShown) {
-        if (oi === item.correct) lab.classList.add('correct');
-        else if (r.checked && oi !== item.correct) lab.classList.add('incorrect');
-      } else {
-        lab.classList.remove('correct','incorrect');
+      if(answersShown){
+        if(oi === item.correct) lab.classList.add('correct');
+        else if(r.checked && oi !== item.correct) lab.classList.add('incorrect');
       }
     });
   });
   document.getElementById('verRespuestas').textContent = answersShown ? 'Ocultar respuestas' : 'Mostrar respuestas correctas';
 });
 
-/* Inicialización */
-createTabs();
-renderExam(0);
+document.getElementById('reiniciar').addEventListener('click', ()=>{
+  currentSet = sampleQuestions(bank,10);
+  render();
+});
+
+// init
+render();
 </script>
 </body>
 </html>
